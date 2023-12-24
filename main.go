@@ -21,6 +21,7 @@ func main() {
 
 // Execute 'go buisld' on provided `proj“
 func run(proj string, out io.Writer) error {
+	// wrapping error
 	if proj == "" {
 		return fmt.Errorf("Project directory required: %w", ErrValidation)
 	}
@@ -29,7 +30,7 @@ func run(proj string, out io.Writer) error {
 	cmd := exec.Command("go", args...)       // `args...` expands our slice into list of strings
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("'go build' failed: %s", err)
+		return &stepErr{step: "go build", msg: "go build failed", cause: err}
 	}
 
 	_, err := fmt.Fprintln(out, "Go Build: SUCCESS")
