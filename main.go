@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 )
 
 // Parse cl flags, before calling 'run()'
@@ -19,21 +18,30 @@ func main() {
 	}
 }
 
-// Execute 'go buisld' on provided `proj“
+// Execute 'go build' on provided `proj“
 func run(proj string, out io.Writer) error {
 	// wrapping error
 	if proj == "" {
 		return fmt.Errorf("Project directory required: %w", ErrValidation)
 	}
-
-	args := []string{"build", ".", "errors"} // prevents creating a file, that would need to be cleaned
-	cmd := exec.Command("go", args...)       // `args...` expands our slice into list of strings
-
-	if err := cmd.Run(); err != nil {
-		return &stepErr{step: "go build", msg: "go build failed", cause: err}
+	pipeline := make([]step, 1) // make a slice w/ cap. of 1
+	pipeline[0] = *NewStep(
+		"go build",
+		"go",
+		"go build: SUCCESS",
+		proj,
+		[]string{"build", ".", "errors"},
+	)
+	// Loop through pipeline, printing the
+	for _, s := range pipeline {
+		msg, err := s.execute()
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(out, msg)
+		if err != nil {
+			return err
+		}
 	}
-
-	_, err := fmt.Fprintln(out, "Go Build: SUCCESS")
-
-	return err
+	return nil
 }
